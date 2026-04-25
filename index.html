@@ -355,6 +355,11 @@
       return Math.min(max, Math.max(min, value));
     }
 
+    function makeId() {
+      if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+      return 'stop-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+    }
+
     function snapshotHistory() {
       state.history.push(JSON.stringify(state.stops));
       if (state.history.length > 40) state.history.shift();
@@ -488,7 +493,7 @@
 
     function addStop(point) {
       snapshotHistory();
-      state.stops.push({ id: crypto.randomUUID(), x: point.x, y: point.y });
+      state.stops.push({ id: makeId(), x: point.x, y: point.y });
       if (state.stops.length === 1) placeSquare(point);
       render();
     }
@@ -597,10 +602,10 @@
       const w = stage.clientWidth;
       const h = stage.clientHeight;
       state.stops = [
-        { id: crypto.randomUUID(), x: w * 0.18, y: h * 0.5 },
-        { id: crypto.randomUUID(), x: w * 0.38, y: h * 0.5 },
-        { id: crypto.randomUUID(), x: w * 0.58, y: h * 0.5 },
-        { id: crypto.randomUUID(), x: w * 0.78, y: h * 0.5 }
+        { id: makeId(), x: w * 0.18, y: h * 0.5 },
+        { id: makeId(), x: w * 0.38, y: h * 0.5 },
+        { id: makeId(), x: w * 0.58, y: h * 0.5 },
+        { id: makeId(), x: w * 0.78, y: h * 0.5 }
       ];
       render();
     }
@@ -612,7 +617,7 @@
       const h = stage.clientHeight;
       const count = 5 + Math.floor(Math.random() * 3);
       state.stops = Array.from({ length: count }, () => ({
-        id: crypto.randomUUID(),
+        id: makeId(),
         x: Math.round(w * (0.14 + Math.random() * 0.72)),
         y: Math.round(h * (0.18 + Math.random() * 0.64))
       }));
