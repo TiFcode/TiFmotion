@@ -347,7 +347,8 @@
       animationStart: 0,
       rafId: null,
       currentSegment: 0,
-      history: []
+      history: [],
+      pointerMoved: false
     };
 
     function clamp(value, min, max) {
@@ -506,11 +507,13 @@
       const marker = event.currentTarget;
       marker.classList.add('dragging');
       state.dragId = id;
+      state.pointerMoved = false;
       marker.setPointerCapture(event.pointerId);
     }
 
     function onPointerMove(event) {
       if (!state.dragId) return;
+      state.pointerMoved = true;
       const point = getStagePoint(event.clientX, event.clientY);
       const stop = state.stops.find(item => item.id === state.dragId);
       if (!stop) return;
@@ -523,6 +526,14 @@
       const dragging = markerLayer.querySelector('.marker.dragging');
       if (dragging) dragging.classList.remove('dragging');
       state.dragId = null;
+    }
+
+    function handleStagePointerDown(event) {
+      if (state.isPlaying) return;
+      const clickedMarker = event.target.closest('.marker');
+      if (clickedMarker) return;
+      const point = getStagePoint(event.clientX, event.clientY);
+      addStop(point);
     }
 
     function animate(timestamp) {
@@ -608,13 +619,7 @@
       render();
     }
 
-    stage.addEventListener('click', event => {
-      if (state.dragId || state.isPlaying) return;
-      const clickedMarker = event.target.closest('.marker');
-      if (clickedMarker) return;
-      const point = getStagePoint(event.clientX, event.clientY);
-      addStop(point);
-    });
+    stage.addEventListener('pointerdown', handleStagePointerDown);
 
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
