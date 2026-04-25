@@ -160,6 +160,7 @@
       box-shadow: 0 14px 24px rgba(79, 134, 247, .32);
       border: 4px solid rgba(255,255,255,.88);
       transition: opacity .2s ease;
+      pointer-events: none;
     }
 
     .tip {
@@ -609,7 +610,8 @@
 
     stage.addEventListener('click', event => {
       if (state.dragId || state.isPlaying) return;
-      if (event.target !== stage && event.target !== pathLayer) return;
+      const clickedMarker = event.target.closest('.marker');
+      if (clickedMarker) return;
       const point = getStagePoint(event.clientX, event.clientY);
       addStop(point);
     });
