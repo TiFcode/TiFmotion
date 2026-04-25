@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>TiFmotion ⬜</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: linear-gradient(180deg, #eef7ff 0%, #dff2ff 45%, #f9fbff 100%);
+      color: #13304b;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .topbar {
+      padding: 12px 14px 8px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    h1 { font-size: clamp(1.45rem, 4.8vw, 2.3rem); }
+    .subtitle {
+      margin-top: 4px;
+      color: #4c7091;
+      font-size: clamp(.88rem, 2.8vw, 1rem);
+      line-height: 1.35;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 10px 10px;
+      flex-shrink: 0;
+    }
+    .pill, .button, .slider-card {
+      background: rgba(255,255,255,.95);
+      border: 2px solid #d6ebff;
+      border-radius: 999px;
+      box-shadow: 0 8px 22px rgba(58, 108, 160, .12);
+    }
+    .pill {
+      padding: 8px 14px;
+      font-weight: 700;
+      color: #33597c;
+      font-size: .95rem;
+    }
+    .pill strong { color: #ff8f45; }
+    .button {
+      border: 0;
+      padding: 10px 16px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      color: white;
+      transition: transform .15s ease, filter .15s ease;
+    }
+    .button:hover { filter: brightness(1.04); }
+    .button:active { transform: scale(.97); }
+    .button.primary { background: linear-gradient(135deg, #6eb8ff, #4f86f7); }
+    .button.success { background: linear-gradient(135deg, #47d99c, #15b86f); }
+    .button.warm { background: linear-gradient(135deg, #ffb24d, #ff8a3d); }
+    .button.soft { background: linear-gradient(135deg, #b09dff, #8f79ff); }
+    .button.ghost {
+      background: white;
+      color: #33597c;
+      border: 2px solid #d6ebff;
+      box-shadow: 0 8px 22px rgba(58, 108, 160, .12);
+    }
+
+    .slider-card {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      color: #33597c;
+      font-weight: 700;
+      min-width: 220px;
+    }
+    .slider-card input { width: 120px; accent-color: #4f86f7; }
+
+    .board-wrap {
+      flex: 1;
+      min-height: 0;
+      padding: 0 12px 12px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .stage-card, .side-card {
+      background: rgba(255,255,255,.92);
+      border: 3px solid #dff0ff;
+      border-radius: 26px;
+      box-shadow: 0 18px 44px rgba(79, 134, 247, .14);
+    }
+
+    .stage-card {
+      position: relative;
+      flex: 1;
+      overflow: hidden;
+      min-height: 320px;
+    }
+    .stage {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      touch-action: none;
+      background:
+        linear-gradient(90deg, rgba(130, 182, 255, .09) 1px, transparent 1px),
+        linear-gradient(rgba(130, 182, 255, .09) 1px, transparent 1px),
+        linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+      background-size: 44px 44px, 44px 44px, auto;
+    }
+    .stage.playing { cursor: default; }
+    .stage.editing { cursor: crosshair; }
+
+    .path-layer, .marker-layer, .square-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .marker {
+      position: absolute;
+      width: 34px;
+      height: 34px;
+      margin-left: -17px;
+      margin-top: -17px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ffcf7d, #ff8a3d);
+      box-shadow: 0 10px 20px rgba(255, 138, 61, .35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+      font-weight: 900;
+      color: white;
+      pointer-events: auto;
+      touch-action: none;
+      cursor: grab;
+      border: 3px solid rgba(255,255,255,.95);
+      transition: transform .12s ease;
+    }
+    .marker.active { transform: scale(1.12); }
+    .marker.dragging { cursor: grabbing; transform: scale(1.16); }
+
+    .square {
+      position: absolute;
+      width: 46px;
+      height: 46px;
+      margin-left: -23px;
+      margin-top: -23px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #6eb8ff, #4f86f7 55%, #7657ff);
+      box-shadow: 0 14px 24px rgba(79, 134, 247, .32);
+      border: 4px solid rgba(255,255,255,.88);
+      transition: opacity .2s ease;
+    }
+
+    .tip {
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      background: rgba(255,255,255,.92);
+      color: #4b6b89;
+      border-radius: 18px;
+      padding: 10px 12px;
+      font-size: .86rem;
+      line-height: 1.35;
+      box-shadow: 0 8px 22px rgba(0,0,0,.08);
+      max-width: min(310px, 64vw);
+    }
+
+    .side-card {
+      width: min(320px, 34vw);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+    }
+    .side-card h2 {
+      font-size: 1.15rem;
+      color: #254869;
+    }
+    .side-card p {
+      color: #557491;
+      line-height: 1.45;
+      font-size: .92rem;
+    }
+    .mini-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .mini-actions .button {
+      padding: 9px 14px;
+      font-size: .92rem;
+    }
+    .frame-list {
+      flex: 1;
+      min-height: 160px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 2px;
+    }
+    .frame-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 18px;
+      background: #f5fbff;
+      border: 2px solid #dfefff;
+      color: #33597c;
+      font-weight: 700;
+    }
+    .frame-item.active {
+      border-color: #8dc5ff;
+      background: #edf7ff;
+    }
+    .frame-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ffcf7d, #ff8a3d);
+    }
+    .frame-coords {
+      font-size: .84rem;
+      color: #5f7d98;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .frame-delete {
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .empty-state {
+      padding: 16px;
+      border-radius: 18px;
+      background: #f7fbff;
+      border: 2px dashed #cfe4ff;
+      color: #5e7a94;
+      line-height: 1.45;
+      font-size: .94rem;
+    }
+
+    @media (max-width: 860px) {
+      .board-wrap {
+        flex-direction: column;
+      }
+      .side-card {
+        width: 100%;
+        max-height: 42vh;
+      }
+      .tip { max-width: calc(100% - 28px); }
+    }
+
+    @media (max-width: 560px) {
+      .toolbar { gap: 6px; }
+      .pill { font-size: .86rem; padding: 7px 12px; }
+      .button { padding: 9px 14px; }
+      .slider-card { min-width: 0; width: 100%; justify-content: center; }
+      .slider-card input { width: 100px; }
+      .side-card { max-height: 48vh; }
+      .marker { width: 30px; height: 30px; margin-left: -15px; margin-top: -15px; }
+      .square { width: 40px; height: 40px; margin-left: -20px; margin-top: -20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>⬜ TiFmotion</h1>
+    <div class="subtitle">Tap to place square stops, drag them around, then press play and watch the square glide through them forever.</div>
+  </div>
+
+  <div class="toolbar">
+    <div class="pill">Stops <strong id="stopCount">0</strong></div>
+    <div class="pill">Mode <strong id="modeLabel">Editing</strong></div>
+    <button class="button success" id="playBtn">▶️ Play</button>
+    <button class="button warm" id="pauseBtn">⏸️ Pause</button>
+    <button class="button soft" id="previewBtn">👀 Jump to first stop</button>
+    <button class="button ghost" id="undoBtn">↩️ Undo</button>
+    <button class="button ghost" id="clearBtn">🗑️ Clear all</button>
+    <div class="slider-card">
+      <span>Speed</span>
+      <input id="speedSlider" type="range" min="0.6" max="4.5" step="0.1" value="2">
+      <strong id="speedValue">2.0s</strong>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <div class="stage-card">
+      <div class="stage editing" id="stage">
+        <svg class="path-layer" id="pathLayer" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+        <div class="marker-layer" id="markerLayer"></div>
+        <div class="square-layer">
+          <div class="square" id="square"></div>
+        </div>
+        <div class="tip" id="tipBox">Tap anywhere to add the first stop. When you have at least 2 stops, press <strong>Play</strong>.</div>
+      </div>
+    </div>
+
+    <aside class="side-card">
+      <div>
+        <h2>How it works</h2>
+        <p>Each orange dot is a place the square will visit. The blue square moves from stop 1 to stop 2, then 3, and loops back to the beginning.</p>
+      </div>
+      <div class="mini-actions">
+        <button class="button primary" id="shuffleBtn">🎲 Make a path</button>
+        <button class="button ghost" id="lineBtn">📏 Straight line</button>
+      </div>
+      <div id="framesPanel" class="frame-list"></div>
+    </aside>
+  </div>
+
+  <script>
+    const stage = document.getElementById('stage');
+    const markerLayer = document.getElementById('markerLayer');
+    const pathLayer = document.getElementById('pathLayer');
+    const square = document.getElementById('square');
+    const stopCountEl = document.getElementById('stopCount');
+    const modeLabel = document.getElementById('modeLabel');
+    const speedSlider = document.getElementById('speedSlider');
+    const speedValue = document.getElementById('speedValue');
+    const tipBox = document.getElementById('tipBox');
+    const framesPanel = document.getElementById('framesPanel');
+
+    const state = {
+      stops: [],
+      isPlaying: false,
+      segmentDuration: Number(speedSlider.value),
+      dragId: null,
+      dragOffset: { x: 0, y: 0 },
+      animationStart: 0,
+      rafId: null,
+      currentSegment: 0,
+      history: []
+    };
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function snapshotHistory() {
+      state.history.push(JSON.stringify(state.stops));
+      if (state.history.length > 40) state.history.shift();
+    }
+
+    function restoreHistory() {
+      if (!state.history.length) return;
+      state.stops = JSON.parse(state.history.pop());
+      if (state.stops.length < 2) stopAnimation();
+      render();
+    }
+
+    function randomColor(index) {
+      const colors = ['#ff8a3d', '#ffb74d', '#7ed6ff', '#7fdcaa', '#c29dff'];
+      return colors[index % colors.length];
+    }
+
+    function getStagePoint(clientX, clientY) {
+      const rect = stage.getBoundingClientRect();
+      return {
+        x: clamp(clientX - rect.left, 0, rect.width),
+        y: clamp(clientY - rect.top, 0, rect.height),
+        width: rect.width,
+        height: rect.height
+      };
+    }
+
+    function placeSquare(point) {
+      square.style.left = point.x + 'px';
+      square.style.top = point.y + 'px';
+      square.style.opacity = state.stops.length ? '1' : '.35';
+    }
+
+    function buildPath() {
+      if (state.stops.length === 0) {
+        pathLayer.innerHTML = '';
+        return;
+      }
+      const polyline = state.stops
+        .map(stop => `${(stop.x / stage.clientWidth) * 100},${(stop.y / stage.clientHeight) * 100}`)
+        .join(' ');
+
+      let svg = '';
+      if (state.stops.length > 1) {
+        svg += `<polyline points="${polyline}" fill="none" stroke="#9ad2ff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.2 2.7" />`;
+        const loopPoints = polyline + ' ' + `${(state.stops[0].x / stage.clientWidth) * 100},${(state.stops[0].y / stage.clientHeight) * 100}`;
+        svg += `<polyline points="${loopPoints}" fill="none" stroke="rgba(154,210,255,.45)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" />`;
+      }
+      state.stops.forEach((stop, index) => {
+        svg += `<circle cx="${(stop.x / stage.clientWidth) * 100}" cy="${(stop.y / stage.clientHeight) * 100}" r="1.05" fill="${randomColor(index)}" opacity=".38" />`;
+      });
+      pathLayer.innerHTML = svg;
+    }
+
+    function renderMarkers() {
+      markerLayer.innerHTML = '';
+      state.stops.forEach((stop, index) => {
+        const marker = document.createElement('button');
+        marker.className = 'marker' + (index === state.currentSegment && state.isPlaying ? ' active' : '');
+        marker.textContent = index + 1;
+        marker.style.left = stop.x + 'px';
+        marker.style.top = stop.y + 'px';
+        marker.style.background = `linear-gradient(135deg, ${randomColor(index)}, #ff8a3d)`;
+        marker.dataset.id = stop.id;
+        marker.addEventListener('pointerdown', event => beginDrag(event, stop.id));
+        marker.addEventListener('dblclick', event => {
+          event.stopPropagation();
+          removeStop(stop.id);
+        });
+        markerLayer.appendChild(marker);
+      });
+    }
+
+    function renderPanel() {
+      if (!state.stops.length) {
+        framesPanel.innerHTML = '<div class="empty-state">No stops yet. Tap inside the playground to drop orange dots. You can drag them later or double-tap a dot to remove it.</div>';
+        return;
+      }
+      framesPanel.innerHTML = '';
+      state.stops.forEach((stop, index) => {
+        const item = document.createElement('div');
+        item.className = 'frame-item' + (state.isPlaying && index === state.currentSegment ? ' active' : '');
+        item.innerHTML = `
+          <div class="frame-dot"></div>
+          <div>
+            <div>Stop ${index + 1}</div>
+            <div class="frame-coords">x ${Math.round(stop.x)} · y ${Math.round(stop.y)}</div>
+          </div>
+          <button class="frame-delete" title="Delete stop">❌</button>
+        `;
+        item.querySelector('.frame-delete').addEventListener('click', () => removeStop(stop.id));
+        item.addEventListener('click', () => {
+          stopAnimation();
+          placeSquare(stop);
+          tipBox.innerHTML = `Square moved to <strong>stop ${index + 1}</strong>. Press Play to animate the whole path.`;
+        });
+        framesPanel.appendChild(item);
+      });
+    }
+
+    function renderMeta() {
+      stopCountEl.textContent = state.stops.length;
+      modeLabel.textContent = state.isPlaying ? 'Playing' : 'Editing';
+      stage.classList.toggle('playing', state.isPlaying);
+      stage.classList.toggle('editing', !state.isPlaying);
+      speedValue.textContent = `${state.segmentDuration.toFixed(1)}s`;
+
+      if (!state.stops.length) {
+        tipBox.innerHTML = 'Tap anywhere to add the first stop. When you have at least 2 stops, press <strong>Play</strong>.';
+      } else if (state.stops.length === 1) {
+        tipBox.innerHTML = 'Add one more stop so the square has somewhere to move.';
+      } else if (state.isPlaying) {
+        tipBox.innerHTML = 'The square is gliding through every stop in a loop. You can pause anytime.';
+      } else {
+        tipBox.innerHTML = 'Drag the orange dots to shape the path, or press <strong>Play</strong> to watch the motion.';
+      }
+    }
+
+    function render() {
+      buildPath();
+      renderMarkers();
+      renderPanel();
+      renderMeta();
+      if (state.stops.length && !state.isPlaying) {
+        placeSquare(state.stops[0]);
+      }
+      if (!state.stops.length) {
+        square.style.opacity = '.35';
+      }
+    }
+
+    function addStop(point) {
+      snapshotHistory();
+      state.stops.push({ id: crypto.randomUUID(), x: point.x, y: point.y });
+      if (state.stops.length === 1) placeSquare(point);
+      render();
+    }
+
+    function removeStop(id) {
+      snapshotHistory();
+      state.stops = state.stops.filter(stop => stop.id !== id);
+      if (state.currentSegment >= state.stops.length) state.currentSegment = 0;
+      if (state.stops.length < 2) stopAnimation();
+      render();
+    }
+
+    function beginDrag(event, id) {
+      event.stopPropagation();
+      stopAnimation();
+      const marker = event.currentTarget;
+      marker.classList.add('dragging');
+      state.dragId = id;
+      marker.setPointerCapture(event.pointerId);
+    }
+
+    function onPointerMove(event) {
+      if (!state.dragId) return;
+      const point = getStagePoint(event.clientX, event.clientY);
+      const stop = state.stops.find(item => item.id === state.dragId);
+      if (!stop) return;
+      stop.x = point.x;
+      stop.y = point.y;
+      render();
+    }
+
+    function onPointerUp(event) {
+      const dragging = markerLayer.querySelector('.marker.dragging');
+      if (dragging) dragging.classList.remove('dragging');
+      state.dragId = null;
+    }
+
+    function animate(timestamp) {
+      if (!state.isPlaying || state.stops.length < 2) return;
+      if (!state.animationStart) state.animationStart = timestamp;
+
+      const from = state.stops[state.currentSegment % state.stops.length];
+      const to = state.stops[(state.currentSegment + 1) % state.stops.length];
+      const elapsed = (timestamp - state.animationStart) / 1000;
+      const t = clamp(elapsed / state.segmentDuration, 0, 1);
+      const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      const x = from.x + (to.x - from.x) * ease;
+      const y = from.y + (to.y - from.y) * ease;
+      placeSquare({ x, y });
+
+      if (t >= 1) {
+        state.currentSegment = (state.currentSegment + 1) % state.stops.length;
+        state.animationStart = timestamp;
+        renderMarkers();
+        renderPanel();
+      }
+      state.rafId = requestAnimationFrame(animate);
+    }
+
+    function startAnimation() {
+      if (state.stops.length < 2) {
+        tipBox.innerHTML = 'You need at least <strong>2 stops</strong> before the square can move.';
+        return;
+      }
+      state.isPlaying = true;
+      state.animationStart = 0;
+      state.currentSegment = 0;
+      render();
+      cancelAnimationFrame(state.rafId);
+      state.rafId = requestAnimationFrame(animate);
+    }
+
+    function stopAnimation() {
+      state.isPlaying = false;
+      state.animationStart = 0;
+      cancelAnimationFrame(state.rafId);
+      state.rafId = null;
+      renderMeta();
+      renderMarkers();
+      renderPanel();
+      if (state.stops.length) placeSquare(state.stops[0]);
+    }
+
+    function clearAll() {
+      if (!state.stops.length) return;
+      snapshotHistory();
+      stopAnimation();
+      state.stops = [];
+      state.currentSegment = 0;
+      render();
+    }
+
+    function seedLine() {
+      snapshotHistory();
+      stopAnimation();
+      const w = stage.clientWidth;
+      const h = stage.clientHeight;
+      state.stops = [
+        { id: crypto.randomUUID(), x: w * 0.18, y: h * 0.5 },
+        { id: crypto.randomUUID(), x: w * 0.38, y: h * 0.5 },
+        { id: crypto.randomUUID(), x: w * 0.58, y: h * 0.5 },
+        { id: crypto.randomUUID(), x: w * 0.78, y: h * 0.5 }
+      ];
+      render();
+    }
+
+    function seedRandom() {
+      snapshotHistory();
+      stopAnimation();
+      const w = stage.clientWidth;
+      const h = stage.clientHeight;
+      const count = 5 + Math.floor(Math.random() * 3);
+      state.stops = Array.from({ length: count }, () => ({
+        id: crypto.randomUUID(),
+        x: Math.round(w * (0.14 + Math.random() * 0.72)),
+        y: Math.round(h * (0.18 + Math.random() * 0.64))
+      }));
+      render();
+    }
+
+    stage.addEventListener('click', event => {
+      if (state.dragId || state.isPlaying) return;
+      if (event.target !== stage && event.target !== pathLayer) return;
+      const point = getStagePoint(event.clientX, event.clientY);
+      addStop(point);
+    });
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+
+    document.getElementById('playBtn').addEventListener('click', startAnimation);
+    document.getElementById('pauseBtn').addEventListener('click', stopAnimation);
+    document.getElementById('previewBtn').addEventListener('click', () => {
+      stopAnimation();
+      if (state.stops.length) {
+        placeSquare(state.stops[0]);
+        tipBox.innerHTML = 'Back at the first stop. Press <strong>Play</strong> to loop the animation.';
+      }
+    });
+    document.getElementById('undoBtn').addEventListener('click', restoreHistory);
+    document.getElementById('clearBtn').addEventListener('click', clearAll);
+    document.getElementById('shuffleBtn').addEventListener('click', seedRandom);
+    document.getElementById('lineBtn').addEventListener('click', seedLine);
+
+    speedSlider.addEventListener('input', () => {
+      state.segmentDuration = Number(speedSlider.value);
+      speedValue.textContent = `${state.segmentDuration.toFixed(1)}s`;
+    });
+
+    window.addEventListener('resize', () => {
+      if (!state.stops.length) {
+        render();
+        return;
+      }
+      const oldWidth = stage.clientWidth || 1;
+      const oldHeight = stage.clientHeight || 1;
+      requestAnimationFrame(() => {
+        const newWidth = stage.clientWidth || 1;
+        const newHeight = stage.clientHeight || 1;
+        state.stops = state.stops.map(stop => ({
+          ...stop,
+          x: (stop.x / oldWidth) * newWidth,
+          y: (stop.y / oldHeight) * newHeight
+        }));
+        render();
+      });
+    });
+
+    seedRandom();
+  </script>
+</body>
+</html>
