@@ -175,28 +175,6 @@
       max-width: min(310px, 64vw);
     }
 
-    .mini-actions {
-      position: absolute;
-      right: 14px;
-      top: 14px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      z-index: 3;
-    }
-    .mini-actions .button {
-      padding: 9px 14px;
-      font-size: .92rem;
-    }
-
-    @media (max-width: 860px) {
-      .mini-actions {
-        position: static;
-        justify-content: center;
-        padding: 0 12px 12px;
-      }
-    }
-
     @media (max-width: 560px) {
       .toolbar { gap: 6px; }
       .pill { font-size: .86rem; padding: 7px 12px; }
@@ -223,6 +201,8 @@
     <button class="button soft" id="previewBtn">👀 Jump to first stop</button>
     <button class="button ghost" id="undoBtn">↩️ Undo</button>
     <button class="button ghost" id="clearBtn">🗑️ Clear all</button>
+    <button class="button primary" id="shuffleBtn">🎲 Make a path</button>
+    <button class="button ghost" id="lineBtn">📏 Straight line</button>
     <div class="slider-card">
       <span>Speed</span>
       <input id="speedSlider" type="range" min="1" max="9" step="1" value="6">
@@ -232,10 +212,6 @@
 
   <div class="board-wrap">
     <div class="stage-card">
-      <div class="mini-actions">
-        <button class="button primary" id="shuffleBtn">🎲 Make a path</button>
-        <button class="button ghost" id="lineBtn">📏 Straight line</button>
-      </div>
       <div class="stage editing" id="stage">
         <svg class="path-layer" id="pathLayer" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
         <div class="marker-layer" id="markerLayer"></div>
