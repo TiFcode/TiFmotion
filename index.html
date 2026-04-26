@@ -397,23 +397,26 @@
     function buildPath() {
       if (state.stops.length === 0) {
         pathLayer.innerHTML = '';
+        pathLayer.setAttribute('viewBox', '0 0 1 1');
         return;
       }
 
       const width = stage.clientWidth || 1;
       const height = stage.clientHeight || 1;
+      pathLayer.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
       const centerPoints = state.stops
-        .map(stop => `${(stop.x / width) * 100},${(stop.y / height) * 100}`)
+        .map(stop => `${stop.x},${stop.y}`)
         .join(' ');
 
       let svg = '';
       if (state.stops.length > 1) {
-        svg += `<polyline points="${centerPoints}" fill="none" stroke="#9ad2ff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.2 2.7" />`;
-        const loopPoints = centerPoints + ' ' + `${(state.stops[0].x / width) * 100},${(state.stops[0].y / height) * 100}`;
-        svg += `<polyline points="${loopPoints}" fill="none" stroke="rgba(154,210,255,.45)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" />`;
+        svg += `<polyline points="${centerPoints}" fill="none" stroke="#9ad2ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 10" />`;
+        const loopPoints = centerPoints + ' ' + `${state.stops[0].x},${state.stops[0].y}`;
+        svg += `<polyline points="${loopPoints}" fill="none" stroke="rgba(154,210,255,.45)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />`;
       }
       state.stops.forEach((stop, index) => {
-        svg += `<circle cx="${(stop.x / width) * 100}" cy="${(stop.y / height) * 100}" r="1.05" fill="${randomColor(index)}" opacity=".38" />`;
+        svg += `<circle cx="${stop.x}" cy="${stop.y}" r="3" fill="${randomColor(index)}" opacity=".5" />`;
       });
       pathLayer.innerHTML = svg;
     }
