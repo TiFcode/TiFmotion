@@ -145,6 +145,7 @@
       cursor: grab;
       border: 3px solid rgba(255,255,255,.95);
       transition: transform .12s ease;
+      transform-origin: center;
     }
     .marker.active { transform: scale(1.12); }
     .marker.dragging { cursor: grabbing; transform: scale(1.16); }
@@ -296,7 +297,7 @@
     <button class="button ghost" id="clearBtn">🗑️ Clear all</button>
     <div class="slider-card">
       <span>Speed</span>
-      <input id="speedSlider" type="range" min="0.6" max="4.5" step="0.1" value="2">
+      <input id="speedSlider" type="range" min="1" max="9" step="1" value="6">
       <strong id="speedValue">2.0s</strong>
     </div>
   </div>
@@ -341,7 +342,7 @@
     const state = {
       stops: [],
       isPlaying: false,
-      segmentDuration: Number(speedSlider.value),
+      segmentDuration: 5 - (Number(speedSlider.value) - 1) * 0.4875,
       dragId: null,
       dragOffset: { x: 0, y: 0 },
       animationStart: 0,
@@ -398,18 +399,21 @@
         pathLayer.innerHTML = '';
         return;
       }
-      const polyline = state.stops
-        .map(stop => `${(stop.x / stage.clientWidth) * 100},${(stop.y / stage.clientHeight) * 100}`)
+
+      const width = stage.clientWidth || 1;
+      const height = stage.clientHeight || 1;
+      const centerPoints = state.stops
+        .map(stop => `${(stop.x / width) * 100},${(stop.y / height) * 100}`)
         .join(' ');
 
       let svg = '';
       if (state.stops.length > 1) {
-        svg += `<polyline points="${polyline}" fill="none" stroke="#9ad2ff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.2 2.7" />`;
-        const loopPoints = polyline + ' ' + `${(state.stops[0].x / stage.clientWidth) * 100},${(state.stops[0].y / stage.clientHeight) * 100}`;
+        svg += `<polyline points="${centerPoints}" fill="none" stroke="#9ad2ff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.2 2.7" />`;
+        const loopPoints = centerPoints + ' ' + `${(state.stops[0].x / width) * 100},${(state.stops[0].y / height) * 100}`;
         svg += `<polyline points="${loopPoints}" fill="none" stroke="rgba(154,210,255,.45)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" />`;
       }
       state.stops.forEach((stop, index) => {
-        svg += `<circle cx="${(stop.x / stage.clientWidth) * 100}" cy="${(stop.y / stage.clientHeight) * 100}" r="1.05" fill="${randomColor(index)}" opacity=".38" />`;
+        svg += `<circle cx="${(stop.x / width) * 100}" cy="${(stop.y / height) * 100}" r="1.05" fill="${randomColor(index)}" opacity=".38" />`;
       });
       pathLayer.innerHTML = svg;
     }
@@ -465,7 +469,7 @@
       modeLabel.textContent = state.isPlaying ? 'Playing' : 'Editing';
       stage.classList.toggle('playing', state.isPlaying);
       stage.classList.toggle('editing', !state.isPlaying);
-      speedValue.textContent = `${state.segmentDuration.toFixed(1)}s`;
+      speedValue.textContent = `${state.segmentDuration.toFixed(1)}s / hop`;
 
       if (!state.stops.length) {
         tipBox.innerHTML = 'Tap anywhere to add the first stop. When you have at least 2 stops, press <strong>Play</strong>.';
@@ -645,8 +649,8 @@
     document.getElementById('lineBtn').addEventListener('click', seedLine);
 
     speedSlider.addEventListener('input', () => {
-      state.segmentDuration = Number(speedSlider.value);
-      speedValue.textContent = `${state.segmentDuration.toFixed(1)}s`;
+      state.segmentDuration = 5 - (Number(speedSlider.value) - 1) * 0.4875;
+      speedValue.textContent = `${state.segmentDuration.toFixed(1)}s / hop`;
     });
 
     window.addEventListener('resize', () => {
