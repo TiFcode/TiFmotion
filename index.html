@@ -89,14 +89,6 @@
       min-height: 0;
       padding: 0 12px 12px;
       display: flex;
-      gap: 12px;
-    }
-
-    .stage-card, .side-card {
-      background: rgba(255,255,255,.92);
-      border: 3px solid #dff0ff;
-      border-radius: 26px;
-      box-shadow: 0 18px 44px rgba(79, 134, 247, .14);
     }
 
     .stage-card {
@@ -104,6 +96,10 @@
       flex: 1;
       overflow: hidden;
       min-height: 320px;
+      background: rgba(255,255,255,.92);
+      border: 3px solid #dff0ff;
+      border-radius: 26px;
+      box-shadow: 0 18px 44px rgba(79, 134, 247, .14);
     }
     .stage {
       position: absolute;
@@ -179,95 +175,26 @@
       max-width: min(310px, 64vw);
     }
 
-    .side-card {
-      width: min(320px, 34vw);
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      overflow: hidden;
-    }
-    .side-card h2 {
-      font-size: 1.15rem;
-      color: #254869;
-    }
-    .side-card p {
-      color: #557491;
-      line-height: 1.45;
-      font-size: .92rem;
-    }
     .mini-actions {
+      position: absolute;
+      right: 14px;
+      top: 14px;
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
+      z-index: 3;
     }
     .mini-actions .button {
       padding: 9px 14px;
       font-size: .92rem;
     }
-    .frame-list {
-      flex: 1;
-      min-height: 160px;
-      overflow: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding-right: 2px;
-    }
-    .frame-item {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 18px;
-      background: #f5fbff;
-      border: 2px solid #dfefff;
-      color: #33597c;
-      font-weight: 700;
-    }
-    .frame-item.active {
-      border-color: #8dc5ff;
-      background: #edf7ff;
-    }
-    .frame-dot {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #ffcf7d, #ff8a3d);
-    }
-    .frame-coords {
-      font-size: .84rem;
-      color: #5f7d98;
-      font-weight: 600;
-      margin-top: 2px;
-    }
-    .frame-delete {
-      background: transparent;
-      border: 0;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-
-    .empty-state {
-      padding: 16px;
-      border-radius: 18px;
-      background: #f7fbff;
-      border: 2px dashed #cfe4ff;
-      color: #5e7a94;
-      line-height: 1.45;
-      font-size: .94rem;
-    }
 
     @media (max-width: 860px) {
-      .board-wrap {
-        flex-direction: column;
+      .mini-actions {
+        position: static;
+        justify-content: center;
+        padding: 0 12px 12px;
       }
-      .side-card {
-        width: 100%;
-        max-height: 42vh;
-      }
-      .tip { max-width: calc(100% - 28px); }
     }
 
     @media (max-width: 560px) {
@@ -305,6 +232,10 @@
 
   <div class="board-wrap">
     <div class="stage-card">
+      <div class="mini-actions">
+        <button class="button primary" id="shuffleBtn">🎲 Make a path</button>
+        <button class="button ghost" id="lineBtn">📏 Straight line</button>
+      </div>
       <div class="stage editing" id="stage">
         <svg class="path-layer" id="pathLayer" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
         <div class="marker-layer" id="markerLayer"></div>
@@ -313,14 +244,6 @@
         </div>
       </div>
     </div>
-
-    <aside class="side-card">
-      <div class="mini-actions">
-        <button class="button primary" id="shuffleBtn">🎲 Make a path</button>
-        <button class="button ghost" id="lineBtn">📏 Straight line</button>
-      </div>
-      <div id="framesPanel" class="frame-list"></div>
-    </aside>
   </div>
 
   <script>
@@ -332,7 +255,6 @@
     const modeLabel = document.getElementById('modeLabel');
     const speedSlider = document.getElementById('speedSlider');
     const speedValue = document.getElementById('speedValue');
-    const framesPanel = document.getElementById('framesPanel');
 
     const state = {
       stops: [],
@@ -435,32 +357,6 @@
       });
     }
 
-    function renderPanel() {
-      if (!state.stops.length) {
-        framesPanel.innerHTML = '<div class="empty-state">No stops yet. Tap inside the playground to drop orange dots. You can drag them later or double-tap a dot to remove it.</div>';
-        return;
-      }
-      framesPanel.innerHTML = '';
-      state.stops.forEach((stop, index) => {
-        const item = document.createElement('div');
-        item.className = 'frame-item' + (state.isPlaying && index === state.currentSegment ? ' active' : '');
-        item.innerHTML = `
-          <div class="frame-dot"></div>
-          <div>
-            <div>Stop ${index + 1}</div>
-            <div class="frame-coords">x ${Math.round(stop.x)} · y ${Math.round(stop.y)}</div>
-          </div>
-          <button class="frame-delete" title="Delete stop">❌</button>
-        `;
-        item.querySelector('.frame-delete').addEventListener('click', () => removeStop(stop.id));
-        item.addEventListener('click', () => {
-          stopAnimation();
-          placeSquare(stop);
-          });
-        framesPanel.appendChild(item);
-      });
-    }
-
     function renderMeta() {
       stopCountEl.textContent = state.stops.length;
       modeLabel.textContent = state.isPlaying ? 'Playing' : 'Editing';
@@ -473,7 +369,6 @@
     function render() {
       buildPath();
       renderMarkers();
-      renderPanel();
       renderMeta();
       if (state.stops.length && !state.isPlaying) {
         placeSquare(state.stops[0]);
@@ -550,7 +445,6 @@
         state.currentSegment = (state.currentSegment + 1) % state.stops.length;
         state.animationStart = timestamp;
         renderMarkers();
-        renderPanel();
       }
       state.rafId = requestAnimationFrame(animate);
     }
@@ -574,7 +468,6 @@
       state.rafId = null;
       renderMeta();
       renderMarkers();
-      renderPanel();
       if (state.stops.length) placeSquare(state.stops[0]);
     }
 
