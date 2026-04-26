@@ -311,15 +311,10 @@
         <div class="square-layer">
           <div class="square" id="square"></div>
         </div>
-        <div class="tip" id="tipBox">Tap anywhere to add the first stop. When you have at least 2 stops, press <strong>Play</strong>.</div>
       </div>
     </div>
 
     <aside class="side-card">
-      <div>
-        <h2>How it works</h2>
-        <p>Each orange dot is a place the square will visit. The blue square moves from stop 1 to stop 2, then 3, and loops back to the beginning.</p>
-      </div>
       <div class="mini-actions">
         <button class="button primary" id="shuffleBtn">🎲 Make a path</button>
         <button class="button ghost" id="lineBtn">📏 Straight line</button>
@@ -337,7 +332,6 @@
     const modeLabel = document.getElementById('modeLabel');
     const speedSlider = document.getElementById('speedSlider');
     const speedValue = document.getElementById('speedValue');
-    const tipBox = document.getElementById('tipBox');
     const framesPanel = document.getElementById('framesPanel');
 
     const state = {
@@ -462,8 +456,7 @@
         item.addEventListener('click', () => {
           stopAnimation();
           placeSquare(stop);
-          tipBox.innerHTML = `Square moved to <strong>stop ${index + 1}</strong>. Press Play to animate the whole path.`;
-        });
+          });
         framesPanel.appendChild(item);
       });
     }
@@ -475,15 +468,6 @@
       stage.classList.toggle('editing', !state.isPlaying);
       speedValue.textContent = `${state.segmentDuration.toFixed(1)}s / hop`;
 
-      if (!state.stops.length) {
-        tipBox.innerHTML = 'Tap anywhere to add the first stop. When you have at least 2 stops, press <strong>Play</strong>.';
-      } else if (state.stops.length === 1) {
-        tipBox.innerHTML = 'Add one more stop so the square has somewhere to move.';
-      } else if (state.isPlaying) {
-        tipBox.innerHTML = 'The square is gliding through every stop in a loop. You can pause anytime.';
-      } else {
-        tipBox.innerHTML = 'Drag the orange dots to shape the path, or press <strong>Play</strong> to watch the motion.';
-      }
     }
 
     function render() {
@@ -573,7 +557,6 @@
 
     function startAnimation() {
       if (state.stops.length < 2) {
-        tipBox.innerHTML = 'You need at least <strong>2 stops</strong> before the square can move.';
         return;
       }
       state.isPlaying = true;
@@ -667,7 +650,6 @@
       stopAnimation();
       if (state.stops.length) {
         placeSquare(state.stops[0]);
-        tipBox.innerHTML = 'Back at the first stop. Press <strong>Play</strong> to loop the animation.';
       }
     });
     document.getElementById('undoBtn').addEventListener('click', restoreHistory);
