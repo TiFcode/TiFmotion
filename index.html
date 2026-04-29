@@ -242,7 +242,8 @@
       rafId: null,
       currentSegment: 0,
       history: [],
-      pointerMoved: false
+      pointerMoved: false,
+      voiceLang: 'ro-RO'
     };
 
     function clamp(value, min, max) {
@@ -285,6 +286,21 @@
       square.style.left = point.x + 'px';
       square.style.top = point.y + 'px';
       square.style.opacity = state.stops.length ? '1' : '.35';
+    }
+
+    function speakStopNumber(number) {
+      if (!('speechSynthesis' in window)) return;
+      const utterance = new SpeechSynthesisUtterance(String(number));
+      utterance.lang = state.voiceLang;
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+
+      const voices = window.speechSynthesis.getVoices();
+      const romanianVoice = voices.find(voice => voice.lang?.toLowerCase().startsWith('ro'));
+      if (romanianVoice) utterance.voice = romanianVoice;
+
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
     }
 
     function buildPath() {
@@ -421,6 +437,7 @@
         state.currentSegment = (state.currentSegment + 1) % state.stops.length;
         state.animationStart = timestamp;
         renderMarkers();
+        speakStopNumber(state.currentSegment + 1);
       }
       state.rafId = requestAnimationFrame(animate);
     }
@@ -433,6 +450,7 @@
       state.animationStart = 0;
       state.currentSegment = 0;
       render();
+      speakStopNumber(1);
       cancelAnimationFrame(state.rafId);
       state.rafId = requestAnimationFrame(animate);
     }
@@ -442,6 +460,9 @@
       state.animationStart = 0;
       cancelAnimationFrame(state.rafId);
       state.rafId = null;
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
       renderMeta();
       renderMarkers();
       if (state.stops.length) placeSquare(state.stops[0]);
@@ -549,6 +570,13 @@
         render();
       });
     });
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.addEventListener('voiceschanged', () => {
+        window.speechSynthesis.getVoices();
+      });
+    }
 
     seedRandom();
   </script>
